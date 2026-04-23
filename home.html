@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <!-- <div id="overlay" class="overlay"></div> -->
+    <div class="container">
+        <h2>Welcome App</h2>
+        <div class="input-group">
+            <input id="username" placeholder="Enter Your username">
+            <button onclick = "sayHello()">Add</button>
+        </div>
+        <button onclick="clearAll()" style="margin-top: 10px; background: #ff5c5c;">clearAll</button>
+        
+        <!-- number 1  -->
+        <!-- <p id = "output"></p> -->
+         <p id="emptyMsg" style="margin-top: 15px; color: #777;">
+            No tasks yet. Add one above 👆
+         </p>
+
+         <div class="filters" style="margin-top: 10px;">
+            <button id="filter-all" onclick="setFilter('all')">All</button>
+            <button id="filter-active" onclick="setFilter('active')">Active</button>
+            <button id="filter-completed" onclick="setFilter('completed')">Completed</button>
+         </div>
+         <div id="counter" style="margin-top: 10px; font-size: 14px; color: #555;"></div>
+
+         <div class="progress-container">
+            <div id="progress-bar"></div>
+         </div>
+         <p id="progress-text" style="font-size: 13px; color: #666;"></p>
+
+        <ul id = "output"></ul>
+    </div>
+        
+
+</body>
+<style>
+    body{
+        font-family: 'Segoe UI', sans-serif;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        /* padding-top: 50px; */
+        min-height: 100vh;
+        /* text-align: center;
+        margin-top: 50px;  */
+    }
+    .container{
+        background: white;
+        padding: 30px;
+        border-radius: 18px;
+        width: 420px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+        text-align: center;
+    }
+    /* .input-group{
+        display: flex;
+        gap: 10px;
+    } */
+
+    input {
+        flex: 1;
+        padding: 12px;
+        border-radius: 10px;
+        border: 1px solid #ddd;
+        outline: none;
+        font-size: 14px;
+        transition: 0.2s;
+        /* font-size: 16px; */
+    }
+    input:focus{
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+    }
+    button{
+        padding: 12px 15px;
+        border: none;
+        background: #667eea;
+        color: white;
+        border-radius: 10px;
+        /* margin-left: 5px; */
+        cursor: pointer;
+        font-weight: 500;
+        transition: 0.2s;
+    }
+
+    button:hover{
+        background: #5a67d8;
+        transform: translateY(-1px);
+    }
+    button:active{
+        transform: scale(0.98);
+    }
+
+    ul{
+        list-style: none;
+        padding: 0;
+        margin-top: 20px;
+        max-height: 300px;
+        overflow-y: auto;
+        padding-right: 5px;
+    }
+
+    li{
+        background: linear-gradient(180deg, #ffffff, #fafafa);
+        border-radius: 14px;
+        align-items: center;
+        margin-bottom: 12px;
+        padding: 14px 16px;
+        display: flex;
+        justify-content: space-between;
+        opacity: 0;
+        transform: translateY(15px) scale(0.98);
+        transition: all 0.3s ease;
+        border: 1px solid rgba(0,0,0,0.05);
+        will-change: transform, opacity;
+        gap: 14px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        cursor: grab;
+        position: relative;
+    
+        /* overflow: hidden; */
+    
+    }
+    li.active{
+        cursor: grabbing;
+    }
+    li:hover{
+        transform: translateY(-2px);
+        box-shadow: 0 10px 22px rgba(0,0,0,0.12);
+    }
+    li button{
+        padding: 6px 10px;
+        border-radius: 8px;
+        border: none;
+        font-size: 12px;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    li button:last-child{
+        background: #ff5c5c;
+        color: white;
+    }
+    li button:last-child:hover{
+        background: #e64545;
+    }
+    li button:first-of-type:hover{
+        background: #ddd;
+    }
+
+    span{
+        text-align: left;
+        font-size: 14px;
+        color: #333;
+        flex: 1;
+        min-width: 0;
+        /* overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap; */
+    }
+    
+    
+    li.show {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    input[type = "checkbox"]{
+        transform: scale(1.2);
+        cursor: pointer;
+        accent-color: #667eea;
+    }
+    input[type = "date"]{
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 3px 6px;
+        font-size: 11px;
+        background: #f9f9f9;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    input[type = "date"]{
+        border-color: #667eea;
+        flex-shrink: 0;
+        opacity: 0.8;
+    }
+    .left{
+        display: flex;
+        align-items: center;
+        /* justify-content: flex-start; */
+        gap: 12px;
+        flex: 1;
+        min-width: 0;
+        flex-wrap: wrap;
+    }
+    .left input[type = "checkbox"]{
+        margin-left: 4px;
+    }
+    h2{
+        margin-bottom: 20px;
+        font-size: 22px;
+        font-weight: 600;
+        color: #222;
+    }
+    .input-group{
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+    .filters button.active{
+        background: #222;
+        color: white;
+        transform: scale(1.05);
+    }
+    li.completed span{
+        text-decoration: line-through;
+        opacity: 0.6;
+        transition: all 0.3s ease;
+    }
+    li:has(.task-text.expanded){
+        background: #f9faff;
+    }
+    .progress-container{
+        width: 100%;
+        height: 10px;
+        background: #eee;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-top: 10px;
+    }
+    #progress-bar{
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        transition: width 0.4s ease;
+    }
+    .dragging{
+        opacity: 0.5;
+        transform: scale(0.98);
+    }
+    .drop-target{
+        border: 2px dashed #667eea;
+        transform: scale(1.02);
+    }
+    .badge{
+        font-size: 11px;
+        padding: 4px 8px;
+        border-radius: 20px;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        flex-shrink: 0;
+        opacity: 0.85;
+
+    }
+    .badge.high{
+        background: #ff5c5c;
+        color: white;
+    }
+    .badge.medium{
+        background: #fbbf24;
+        color: black;
+    }
+    .badge.low{
+        background: #34d399;
+        color: white;
+    }
+    .overdue{
+        border: 2px solid #ff5c5c !important;
+        background: #fff5f5;
+    }
+    .task-text{
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        cursor: pointer;
+        flex: 1;
+    }
+    .task-text.expanded{
+        white-space: normal;
+        overflow: visible;
+        text-overflow: unset;
+        position: relative;
+        z-index: 1001;
+        background: white;
+        padding: 14px;
+        border-radius: 12px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+        /* margin-top: 6px; */
+        /* margin-bottom: 6px; */
+        border: 1px solid rgba(102, 126, 234, 0.25);
+        /* display: block; */
+        /* top: 50px;
+        left: 10px; */
+        right: 10px;
+        /* z-index: 9999; */
+        max-height: 200px;
+        overflow-y: auto;
+    }
+    .badge,
+    input[type = "date"]{
+        position: relative;
+        z-index: 1;
+    }
+    /* .overlay{
+        position: fixed;
+        top: 0;
+        left: 0; */
+        /* width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.45);
+        display: none;
+        inset: 0;
+    } */
+
+
+</style>
+<script>
+    function addNameToList(item, shouldScroll = false){
+        
+        let list = document.getElementById("output");
+        let newItem = document.createElement("li");
+        if(isOverdue(item.dueDate)&& !item.completed){
+            newItem.classList.add("overdue");
+        }
+        newItem.dataset.id = item.id;
+        newItem.draggable = true;
+
+        newItem.addEventListener("dragstart", function(){
+            draggedItem = newItem;
+            newItem.classList.add("dragging");
+        });
+
+        newItem.addEventListener("dragend",function(){
+            draggedItem = null;
+            newItem.classList.remove("dragging");
+
+            document.querySelectorAll("li").forEach(li => {
+                li.classList.remove("drop-target");
+
+            });
+
+            saveDragOrder();
+        });
+
+
+        newItem.addEventListener("dragover", function(e){
+            e.preventDefault();
+
+            if(!draggedItem || draggedItem === newItem) return;
+            document.querySelectorAll("li").forEach(li => {
+                li.classList.remove("drop-target");
+
+            });
+
+            newItem.classList.add("drop-target");
+
+
+            //const draggingItem = document.querySelector(".dragging");
+            const rect = newItem.getBoundingClientRect();
+            const offset = e.clientY - rect.top;
+
+            const half = rect.height / 2;
+
+            const list = document.getElementById("output"); 
+
+            if (offset < half){
+                list.insertBefore(draggedItem, newItem);
+            }else{
+                list.insertBefore(draggedItem, newItem.nextSibling);
+            }
+
+            // if (draggingItem && draggingItem !== newItem){
+            //     list.insertBefore(draggingItem, newItem);
+            // }
+        });
+
+        // questionable
+        // newItem.addEventListener("drop", function(){
+        //     const list = document.getElementById("output");
+        //     const items = list.querySelectorAll("li");
+
+        //     let newOrder = [];
+
+        //     items.forEach(li => {
+        //         let id = Number(li.dataset.id);
+        //         let found = names.find(t => t.id === id);
+        //         //let text = li.querySelector("span").innerText;
+        //         //let found = names.find(t => t.text === text);
+        //         if (found) {
+        //             newOrder.push(found);
+        //         }
+        //     });
+        //     names = newOrder;
+        //     localStorage.setItem("names", JSON.stringify(names));
+        //     renderList();
+        //     updateCounter();
+        // });
+
+        let text = document.createElement("span");
+        text.style.flex = "1";
+        text.style.minWidth = "0"
+        text.classList.add("task-text");
+        text.innerText = item.text;
+
+        text.onclick = function(){
+            
+            //let overlay = document.getElementById("overlay");
+            const isOpen = text.classList.contains("expanded");
+
+            document.querySelectorAll(".task-text.expanded")
+                .forEach(t => t.classList.remove("expanded"));
+            
+            if (isOpen){
+               // overlay.style.display = "none";
+                text.classList.add("expanded");
+
+            }
+            //else{
+                
+            //     overlay.style.display = "block";
+            // }
+            // if(text.classList.contains("expanded")){
+            //     text.classList.remove("expanded");
+            //     overlay.style.display = "none";
+            // }else{
+            //     document.querySelectorAll(".task-text.expanded")
+            //         .forEach(t => t.classList.remove("expanded"));
+
+            //     text.classList.add("expanded");
+            //     overlay.style.display = "block";
+
+            // }
+            //text.classList.toggle("expanded");
+        };
+        // document.getElementById("overlay").onclick = function () {
+        //     document.querySelectorAll(".task-text.expanded")
+        //         .forEach(t => t.classList.remove("expanded"));
+
+        //     this.style.display = "none";
+
+        // };
+
+        // text.style.overflow = "hidden";
+        // text.style.textOverflow = "ellipsis";
+        // text.style.whiteSpace = "nowrap";
+
+        
+        let checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = item.completed;
+        text.innerText = item.text;
+        if(item.completed){
+            //text.style.textDecoration = "line-through";
+            //text.style.opacity = "0.6";
+        }
+        //"Welcome, " + name;
+
+        let deletebtn = document.createElement("button");
+        deletebtn.innerText = "Delete";
+
+        deletebtn.onclick = function(){
+            newItem.classList.remove("show");
+            newItem.style.transform = "translateX(20px)";
+            newItem.style.opacity = "0";
+
+            setTimeout(() => {
+                names = names.filter(t => t.id !== item.id);
+            
+                //names.splice(index, 1);
+                localStorage.setItem("names", JSON.stringify(names));
+                updateCounter();
+                newItem.remove();
+
+            }, 250);
+            
+
+        };
+        let left = document.createElement("div");
+        left.className = "left"
+
+        left.style.display = "flex";
+        left.style.alignItems = "center";
+        left.style.gap = "10px";
+        left.style.minWidth = "0";
+
+        
+
+        let badge = document.createElement("span");
+        badge.innerText = item.priority.toUpperCase();
+        badge.classList.add("badge", item.priority);
+        // badge.style.fontSize = "11px";
+        // badge.style.padding = "3px 6px";
+        // badge.style.borderRadius = "6px";
+        // badge.style.marginLeft = "6px";
+
+        // if(item.priority === "high"){
+        //     badge.style.background ="#ff5c5c";
+        //     badge.style.color = "white";
+        // }
+        // else if(item.priority === "medium"){
+        //     badge.style.background = "#fbbf24";
+        //     badge.style.color = "black";
+        // }
+        // else{
+        //     badge.style.background = "#34d399";
+        //     badge.style.color = "white";
+
+        // }
+        badge.classList.add("badge", item.priority);
+
+        badge.onclick = function(){
+            let newPriority;
+
+            if(item.priority === "high") newPriority = "medium";
+            else if(item.priority === "medium")newPriority = "low";
+            else newPriority = "high";
+
+            names = names.map(t => {
+                if(t.id === item.id){
+                    return{...t, priority: newPriority};
+
+                }
+                return t;
+            });
+            localStorage.setItem("names",JSON.stringify(names));
+            renderList();
+        };
+
+        let dateInput = document.createElement("input");
+        dateInput.type = "date";
+        dateInput.value = item.dueDate || "";
+        dateInput.style.fontSize = "11px";
+        dateInput.style.marginLeft = "5px";
+
+        dateInput.onchange = function(){
+            names = names.map(t => {
+                if(t.id === item.id){
+                    return { ...t, dueDate: dateInput.value};
+                }
+                return t;
+
+            });
+            localStorage.setItem("names", JSON.stringify(names));
+        };
+
+        left.appendChild(checkbox);
+        left.appendChild(text);
+        left.appendChild(badge);
+        left.appendChild(dateInput);
+
+
+
+
+        //newItem.appendChild(checkbox);
+        let editbtn = document.createElement("button");
+        editbtn.innerText = "Edit";
+
+        editbtn.onclick = function(){
+            let input = document.createElement("input");
+            input.type = "text";
+            input.value = item.text;
+
+            left.innerHTML = "";
+            left.appendChild(checkbox);
+            left.appendChild(input);
+
+
+            //newItem.replaceChild(input, left);
+            input.focus();
+
+            function saveEdit(){
+                let updated = input.value.trim();
+                if (updated === ""){
+                    //left.innerHTML = "";
+                   // left.appendChild(checkbox);
+                   // left.appendChild(text);
+                    renderList();
+                    return;
+                }
+                names = names.map(t => {
+                    if (t.id === item.id){
+                        return { ...t, text: updated};
+                    }
+                    return t;
+                });
+                localStorage.setItem("names", JSON.stringify(names));
+                updateCounter();
+
+                // left.innerHTML = "";
+                // left.appendChild(checkbox);
+                // left.appendChild(text);
+                renderList();
+            }
+            input.addEventListener("keydown", function(e){
+                if(e.key === "Enter"){
+                    saveEdit();
+                }
+                
+            });
+
+            input.addEventListener("blur",  saveEdit);
+            
+            
+
+            // input.onkeydown = function(e){
+            //     if (e.key === "Enter"){
+            //         let updated = input.value;
+
+            //         if(updated.trim() === "") return;
+
+            //         names[index].text = updated;
+            //         localStorage.setItem("names", JSON.stringify(names));
+
+            //         renderList();
+
+            //         //text.innerText = updated;
+            //         //newItem.replaceChild(left, input);
+
+            //     }
+            // };
+            // // input.onblur = function(){
+            // //     renderList();
+            //     //newItem.replaceChild(left, input);
+            // };
+
+            // let newText = prompt("Edit your task:", item.text);
+            // if (newText === null || newText.trim() === "") return;
+            // names[index].text = newText;
+            // localStorage.setItem("names", JSON.stringify(names));
+            // text.innerText = newText;
+        };
+
+
+        newItem.appendChild(left);
+        newItem.appendChild(editbtn);
+        newItem.appendChild(deletebtn);
+        // checkbox.type = "checkbox";
+        // checkbox.checked = item.completed;
+
+        checkbox.onchange = function(){
+            names = names.map(t => {
+                if(t.id === item.id){
+                    return { ...t, completed: checkbox.checked };
+                }
+                return t;
+            });
+            //names[index].completed = checkbox.checked;
+            localStorage.setItem("names", JSON.stringify(names));
+            if (checkbox.checked){
+                newItem.classList.add("completed");
+                //text.style.textDecoration = "line-through";
+                //text.style.opacity = "0.6";
+
+            }else{
+                newItem.classList.remove("completed");
+                //text.style.textDecoration = "none";
+                //text.style.opacity = "1";
+            }
+        };
+
+        list.appendChild(newItem);
+        requestAnimationFrame(() => {
+            newItem.classList.add("show");
+            if (shouldScroll){
+                setTimeout(() => {
+                    list.scrollTop = list.scrollHeight;
+                    // list.scrollTo({
+                    //     top: list.scrollHeight,
+                    //     behavior: "smooth"
+                    // });
+                }, 100);
+
+            }
+                
+        });
+        // list.scrollTo({
+        //     top: list.scrollHeight,
+        //     behavior: "smooth"
+        // });
+        //list.scrollTo = list.scrollHeight;
+        //newItem.scrollIntoView({behavior: "smooth", block:"end"});
+    }
+    function saveDragOrder(){
+        const list = document.getElementById("output");
+        const items = list.querySelectorAll("li");
+
+        let newOrder = [];
+        items.forEach(li => {
+            let id = Number(li.dataset.id);
+            let found = names.find(t => t.id === id);
+            if (found) newOrder.push(found);
+
+        });
+        names = newOrder;
+        localStorage.setItem("names", JSON.stringify(names));
+        updateCounter();
+    }
+    let names = JSON.parse(localStorage.getItem("names")) || [];
+    let currentFilter = "all";
+    let draggedItem = null;
+
+    function setFilter(filter){
+        currentFilter = filter;
+        renderList();
+        updateFilterUI();
+    }
+
+    function updateFilterUI(){
+        document.getElementById("filter-all").classList.remove("active");
+        document.getElementById("filter-active").classList.remove("active");
+        document.getElementById("filter-completed").classList.remove("active");
+
+        if(currentFilter === "all"){
+            document.getElementById("filter-all").classList.add("active");
+        }
+        if(currentFilter === "active"){
+            document.getElementById("filter-active").classList.add("active");
+
+        }
+        if(currentFilter === "completed"){
+            document.getElementById("filter-completed").classList.add("active");
+        }
+
+    }
+    function getPriorityValue(priority){
+        if(priority === "high")return 1;
+        if(priority === "medium")return 2;
+        return 3;
+    }
+    function isOverdue(date){
+        if(!date) return false;
+        const today = new Date();
+        const due = new Date(date);
+
+        today.setHours(0,0,0,0);
+        due.setHours(0,0,0,0);
+
+        return due < today;
+    }
+    
+    function renderList(shouldScroll = false){
+        let list = document.getElementById("output");
+        let emptyMsg = document.getElementById("emptyMsg");
+
+        list.innerHTML = "";
+
+        if(names.length === 0 ){
+            emptyMsg.style.display = "block";
+        }else{
+            emptyMsg.style.display = "none";
+            
+            let filtered = names.filter(item => {
+                if (currentFilter === "active") return !item.completed;
+                if (currentFilter === "completed") return item.completed;
+                return true;
+
+            });
+
+            if(!draggedItem){
+                filtered.sort((a,b) => {
+                    if(a.completed !== b.completed){
+                        return a.completed - b.completed;
+                    }
+                    return getPriorityValue(a.priority) - getPriorityValue(b.priority);
+                    
+                });
+
+            }
+            
+
+            filtered.forEach(function(item){
+                addNameToList(item, false);
+                
+            });
+            updateCounter();
+            // names.forEach(function(item){
+            //     addNameToList(item, false);
+            // });
+
+            // scroll fix 
+            if(shouldScroll){
+                setTimeout(() => {
+                    list.scrollTop = list.scrollHeight;
+
+                }, 100);
+            }
+            
+        }
+
+        
+    }
+
+    names = names.map(item => {
+        if (typeof item === "string"){
+            return{ 
+                id: Date.now(),
+                text: item, 
+                completed: false,
+                priority: "medium",
+                dueDate: null
+            };
+        }
+        if (!item.priority){
+            item.priority = "medium";
+        }
+        if(!item.dueDate){
+            item.dueDate = null;
+        }
+        return item;
+    }); 
+
+
+    function updateCounter(){
+        let active = names.filter(t => !t.completed).length;
+        let completed = names.filter(t => t.completed).length;
+        let total = names.length;
+
+        document.getElementById("counter").innerText = `Active: ${active} | Completed: ${completed} | Total: ${total}`;
+
+        let percent = total === 0 ? 0: Math.round((completed/total)*100);
+        document.getElementById("progress-bar").style.width = percent + "%";
+        
+        document.getElementById("progress-text").innerText = percent + "% completed";
+
+    }
+    function sayHello(){
+        
+
+        // number 1
+    //    let name = document.getElementById("username").value;
+    //    if(name == ""){
+    //     document.getElementById("output").innerText = "Please Enter Username"
+    //    }else
+    //    document.getElementById("output").innerText = "Welcome, " + name;
+        
+        // number 2
+    // let input = document.getElementById("username");
+    // let name = input.value;
+
+    // if(name === ""){
+    //     document.getElementById("output").innerText =  "Please enter username "
+
+    // }else{
+    //     document.getElementById("output").innerText = "Welcome, " + name;
+    // }
+    // input.value = "";
+    let input = document.getElementById("username");
+    let name = input.value;
+    if(name.trim() === ""){
+        input.focus();
+        return;
+
+    } 
+    names.push({
+        id:Date.now(),
+        text: name,
+        completed: false,
+        priority: "medium",
+        dueDate: null
+
+    });
+
+    localStorage.setItem("names", JSON.stringify(names));
+    renderList(true);
+    updateCounter();
+    //addNameToList(names[names.length - 1], true);
+
+    
+
+    // if(name === ""){
+    //     return;
+    // }
+    // let list = document.getElementById("output");
+    // let newItem = document.createElement("li");
+    // let text = document.createElement("span");
+    // text.innerText = "welcome, " + name;
+
+    // let deletebtn = document.createElement("button");
+    // deletebtn.innerText = "Delete";
+
+    // newItem.appendChild(text);
+    // newItem.appendChild(deletebtn);
+    // list.appendChild(newItem);
+
+    // deletebtn.onclick = function(){
+    //     let index = names.indexOf(name);
+    //     names.splice(index, 1);
+    //     localStorage.setItem("names", JSON.stringify(names));
+    //     newItem.remove();
+    // };
+
+    input.value = "";
+    input.focus();
+    }
+    function clearAll(){
+        if(!confirm("Are you sure you want to delete all tasks ?"))return;
+        names = [];
+        localStorage.removeItem("names");
+        renderList();
+    }
+
+
+    document.getElementById("username").addEventListener("keydown", function(event){
+        if(event.key === "Enter"){
+            sayHello();
+        }
+    });
+
+    renderList();
+    updateCounter();
+
+    // names.forEach(function(item){
+    //     addNameToList(item, false);
+
+    // });
+    
+    // names.forEach(function(name, index){
+    //     let list = document.getElementById("output");
+    //     let newItem = document.createElement("li");
+    //     let text = document.createElement("span");
+    //     text.innerText = "Welcome, " + name;
+
+    //     let deletebtn = document.createElement("button");
+    //     deletebtn.innerText = "Delete";
+
+    //     deletebtn.onclick = function(){
+    //         names.splice(index, 1)
+    //          localStorage.setItem("names", JSON.stringify(names));
+    //         newItem.remove();
+    //     };
+
+    //     newItem.appendChild(text);
+    //     newItem.appendChild(deletebtn);
+
+    //   list.appendChild(newItem);
+    // //   setTimeout(() => {
+    // //     newItem.classList.add("show");
+
+    // //   },10);
+    // requestAnimationFrame(() => {
+    //     newItem.classList.add("show");
+
+    // });
+    // });
+    updateFilterUI();
+</script>
+</html>
