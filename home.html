@@ -1541,6 +1541,9 @@
                 addFromFloating();
             }
         });
+    
+    
+        
 
     renderList();
     updateCounter();
@@ -1579,5 +1582,44 @@
     // });
     // });
     updateFilterUI();
+
+    window.addEventListener("load", () => {
+        gsap.from(".floating-bar", {
+            y: 80,
+            opacity: 0,
+            duration: 0.8,
+            ease: "power3.out"
+        });
+
+    });
+
+    const bar = document.querySelector(".floating-bar");
+
+    bar.addEventListener("mousemove", (e) => {
+        const rect = bar.getBoundingClientRect();
+        const x = e.clientx - rect.left;
+        const y = e.clientY - rect.top;
+
+
+        const moveX = (x - rect.width/ 2) / 25;
+        const moveY = (y - rect.height / 2) / 25;
+
+        gsap.to(bar, {
+            x: moveX,
+            y: moveY,
+            duration: 0.3,
+            ease: "power2.out"
+        });
+    });
+
+    bar.addEventListener("mouseleave", () => {
+        gsap.to(bar, {
+            x:0,
+            y:0,
+            duration: 0.4,
+            ease: "power3.out"
+        });
+    });
+
 </script>
 </html>
