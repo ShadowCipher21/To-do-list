@@ -648,6 +648,9 @@
         transition: all 0.25s ease;
         -webkit-backdrop-filter: blur(18px) saturate(160%);
         animation: floatGlow 6s ease-in-out infinite;
+
+        /* position: relative; */
+        overflow: hidden;
     }
     .floating-bar input {
         background: rgba(255,255,255,0.75);
@@ -672,11 +675,17 @@
         height: 1px;
 
         background: linear-gradient(
-            90deg,
+            120deg,
             transparent,
-            rgba(0,0,0,0.08),
+            rgba(99, 102, 241, 0.6),
+            transparent,
+            rgba(139, 92, 246, 0.6),
             transparent
         );
+        inset: -1px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        animation: borderFlow 6s linear infinite;
     }
     [data-theme = "dark"] .floating-bar input {
         background: rgba(15,23,42,0.5);
@@ -693,9 +702,11 @@
         height: 1px;
 
         background: linear-gradient(
-            90deg,
+            120deg,
             transparent,
-            rgba(255,255,255,0.25),
+            rgba(129,140,248,0.8),
+            transparent,
+            rgba(167, 139, 250, 0.8),
             transparent
         );
         opacity: 0.6;
@@ -737,6 +748,20 @@
     [data-theme = "dark"] .floating-bar:focus-within {
         box-shadow: 0 25px 60px rgba(0,0,0,0.06), 0 0 0 1px rgba(129,140,248,0.4), rgba(129,140,248,0.45);
         border: 1px solid rgba(129,140,248,0.35);
+    }
+    .floating-bar:hover::before,
+    .floating-bar:focus-within::before {
+        opacity: 1;
+    }
+    @keyframes borderFlow {
+        0% {
+            transform: translateX(-100%);
+
+        }
+        100% {
+            transform: translateX(100%);
+        }
+        
     }
 
     .theme-toggle {
