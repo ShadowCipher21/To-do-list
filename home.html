@@ -55,6 +55,20 @@
             </div>
             <p id="progress-text" style="font-size: 13px; color: var(--shadow);"></p>
 
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input id="searchInput" placeholder="Search tasks..." />
+
+            </div>
+            <!-- <div style = "margin-bottom: 12px;">
+                <input
+                id="searchInput"
+                placeholder="🔍 Search tasks..."
+                style="width:100%;"
+                
+                />
+
+            </div> -->
             <ul id = "output"></ul>
         </div>
     </div>
@@ -687,6 +701,21 @@
         transition: opacity 0.3s ease;
         animation: borderFlow 6s linear infinite;
     }
+    .floating-bar::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -120%;
+        width: 60%;
+        height: 100%;
+        border-radius: 20px;
+
+        background: linear-gradient(120deg, transparent, rgba(255,255,255,0.5), transparent);
+        opacity: 0.4;
+        pointer-events: none;
+
+
+    }
     [data-theme = "dark"] .floating-bar input {
         background: rgba(15,23,42,0.5);
         border: 1px solid rgba(255,255,255,0.08);
@@ -711,6 +740,14 @@
         );
         opacity: 0.6;
 
+    }
+    [data-theme = "dark"] .floating-bar::after {
+        background: linear-gradient(
+            120deg, 
+            transparent,
+            rgba(255,255,255,0.15),
+            transparent
+        );
     }
 
     /* .floating-bar input{
@@ -752,6 +789,24 @@
     .floating-bar:hover::before,
     .floating-bar:focus-within::before {
         opacity: 1;
+    }
+    .floating-bar:hover::after,
+    .floating-bar:focus-within::after {
+        animation: shimmerSweep 1.2s ease forwards;
+    }
+    @keyframes shimmerSweep {
+        0% {
+            left: -120%;
+            opacity: 0;
+        }
+        30% {
+            opacity: 0.6;
+        }
+        100% {
+            left: 120%;
+            opacity: 0;
+        }
+        
     }
     @keyframes borderFlow {
         0% {
@@ -824,6 +879,56 @@
         
     }
 
+    mark {
+        background: #facc15;
+        color: black;
+        padding: 0 2px;
+        border-radius: 3px;
+    }
+    .search-box{
+        position: relative;
+        width: 100%;
+    }
+    .search-box input {
+        width: 100%;
+        padding: 12px 14px 12px 40px;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: var(--card);
+        backdrop-filter: blur(10px);
+        font-size: 14px;
+        transition: all 0.25s ease;
+    }
+    .search-box input:focus{
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15), 0 10px 30px rgba(99, 102, 241, 0.15);
+        transform: translateY(-1px);
+    }
+    .search-icon {
+        position: absolute;
+        top: 50%;
+        left: 12px;
+        transform: translateY(-50%);
+        font-size: 14px;
+        opacity: 0.6;
+        pointer-events: none;
+    }
+    .task-item {
+        transition: opacity 0.25s ease, transform 0.25s ease, filter 0.25s ease;
+    }
+    .task-item.hidden {
+        opacity: 0;
+        transform: scale(0.92) translateY(8px);
+        pointer-events: none;
+        position: absolute;
+    }
+    .task-item.visible {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+
+
+
 
 
     
@@ -846,6 +951,8 @@
         
         let list = document.getElementById("output");
         let newItem = document.createElement("li");
+        newItem.classList.add("task-item");
+
         if(isOverdue(item.dueDate)&& !item.completed){
             newItem.classList.add("overdue");
         }
@@ -927,7 +1034,13 @@
         text.style.flex = "1";
         text.style.minWidth = "0"
         text.classList.add("task-text");
-        text.innerText = item.text;
+        let displayText = item.text;
+        if(searchQuery) {
+            const regex = new RegExp(`(${searchQuery})`, "gi");
+            displayText = displayText.replace(regex, `<mark>$1</mark>`);
+
+        }
+        text.innerHTML = displayText;
 
         text.onclick = function(e){
             e.stopPropagation();
@@ -990,8 +1103,8 @@
         
         let checkbox = document.createElement("input");
         checkbox.type = "checkbox";
-        checkbox.checked = item.completed;
-        text.innerText = item.text;
+        checkbox.checked = Number(item.completed) === 1;
+        //text.innerText = item.text;
         if(item.completed){
             //text.style.textDecoration = "line-through";
             //text.style.opacity = "0.6";
@@ -1002,19 +1115,44 @@
         deletebtn.innerText = "Delete";
 
         deletebtn.onclick = function(){
-            newItem.classList.remove("show");
             newItem.style.transform = "translateX(20px)";
             newItem.style.opacity = "0";
 
             setTimeout(() => {
                 names = names.filter(t => t.id !== item.id);
-            
-                //names.splice(index, 1);
-                localStorage.setItem("names", JSON.stringify(names));
+                renderList();
                 updateCounter();
-                newItem.remove();
 
-            }, 250);
+                fetch("delete_task.php", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                        
+                    },
+                    body: JSON.stringify({
+                        id: item.id
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if(!data.success){
+                        console.error(data.error);
+                    }
+                });
+            }, 200);
+            // newItem.classList.remove("show");
+            // newItem.style.transform = "translateX(20px)";
+            // newItem.style.opacity = "0";
+
+            // setTimeout(() => {
+            //     names = names.filter(t => t.id !== item.id);
+            
+            //     //names.splice(index, 1);
+            //     //localStorage.setItem("names", JSON.stringify(names));
+            //     updateCounter();
+            //     newItem.remove();
+
+            // }, 250);
             
 
         };
@@ -1065,8 +1203,27 @@
                 }
                 return t;
             });
-            localStorage.setItem("names",JSON.stringify(names));
+            //localStorage.setItem("names",JSON.stringify(names));
             renderList();
+
+            fetch("update_field.php", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    id: item.id,
+                    field: "priority",
+                    value: newPriority
+                })
+            })
+
+            .then(res => res.json())
+            .then(data => {
+                if(!data.success){
+                    console.error(data.error);
+                }
+            });
         };
 
         let dateInput = document.createElement("input");
@@ -1076,14 +1233,35 @@
         dateInput.style.marginLeft = "5px";
 
         dateInput.onchange = function(){
+            const newDate = dateInput.value;
+
             names = names.map(t => {
                 if(t.id === item.id){
-                    return { ...t, dueDate: dateInput.value};
+                    return { ...t, dueDate: newDate};
                 }
                 return t;
 
             });
-            localStorage.setItem("names", JSON.stringify(names));
+
+            renderList();
+
+            fetch("update_field.php", {
+                method: "POST",
+                headers: {
+                    "content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    id: item.id,
+                    field: "dueDate",
+                    value: newDate
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(!data.success){
+                    console.error(data.error);
+                }
+            });
         };
 
         left.appendChild(checkbox);
@@ -1126,14 +1304,34 @@
                     }
                     return t;
                 });
-                localStorage.setItem("names", JSON.stringify(names));
+                //localStorage.setItem("names", JSON.stringify(names));
+                renderList();
                 updateCounter();
+
+                fetch("edit_task.php", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        id: item.id,
+                        text: updated
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if(!data.success){
+                        console.error(data.error);
+                    }
+                });
 
                 // left.innerHTML = "";
                 // left.appendChild(checkbox);
                 // left.appendChild(text);
-                renderList();
+                
             }
+
+
             input.addEventListener("keydown", function(e){
                 if(e.key === "Enter"){
                     saveEdit();
@@ -1181,24 +1379,78 @@
         // checkbox.checked = item.completed;
 
         checkbox.onchange = function(){
+            // new 
+            const newValue = checkbox.checked ? 1 : 0;
+
             names = names.map(t => {
-                if(t.id === item.id){
-                    return { ...t, completed: checkbox.checked };
+                if(t.id === item.id) {
+                    return { ...t, completed: newValue};
+
                 }
                 return t;
             });
-            //names[index].completed = checkbox.checked;
-            localStorage.setItem("names", JSON.stringify(names));
-            if (checkbox.checked){
-                newItem.classList.add("completed");
-                //text.style.textDecoration = "line-through";
-                //text.style.opacity = "0.6";
 
-            }else{
-                newItem.classList.remove("completed");
-                //text.style.textDecoration = "none";
-                //text.style.opacity = "1";
-            }
+            names.sort((a,b) => {
+                if(a.completed !== b.completed){
+                    return a.completed - b.completed;
+
+                }
+                return getPriorityValue(a.priority) - getPriorityValue(b.priority);
+
+            });
+
+            renderList();
+            updateCounter();
+            
+            // if(newValue === 1){
+            //     newItem.classList.add("completed");
+
+            // }else {
+            //     newItem.classList.remove("completed");
+            // }
+            // names = names.map(t => {
+            //     if(t.id === item.id){
+            //         return { ...t, completed: newValue };
+
+            //     }
+            //     return t;
+            // });
+            // updateCounter();
+
+            fetch("update_task.php", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    id: item.id,
+                    completed: newValue
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(!data.success){
+                    console.error(data.error);
+                }
+            });
+            // names = names.map(t => {
+            //     if(t.id === item.id){
+            //         return { ...t, completed: checkbox.checked };
+            //     }
+            //     return t;
+            // });
+            //names[index].completed = checkbox.checked;
+            //localStorage.setItem("names", JSON.stringify(names));
+            // if (checkbox.checked){
+            //     newItem.classList.add("completed");
+            //     //text.style.textDecoration = "line-through";
+            //     //text.style.opacity = "0.6";
+
+            // }else{
+            //     newItem.classList.remove("completed");
+            //     //text.style.textDecoration = "none";
+            //     //text.style.opacity = "1";
+            // }
         };
 
         list.appendChild(newItem);
@@ -1227,39 +1479,79 @@
         const list = document.getElementById("output");
         const items = list.querySelectorAll("li");
 
-        let newOrder = [];
-        items.forEach(li => {
-            let id = Number(li.dataset.id);
-            let found = names.find(t => t.id === id);
-            if (found) newOrder.push(found);
+        const orderMap = {};
+        items.forEach((li, index) => {
+            orderMap[Number(li.dataset.id)] = index;
 
         });
-        names = newOrder;
-        localStorage.setItem("names", JSON.stringify(names));
+
+        names.sort((a, b) => {
+            const aIndex = orderMap[a.id] ?? 999999;
+            const bIndex = orderMap[b.id] ?? 999999;
+            return aIndex - bIndex;
+        });
+
+
+        // let newOrder = [];
+        // items.forEach((li, index) => {
+        //     let id = Number(li.dataset.id);
+        //     let found = names.find(t => t.id === id);
+        //     if (found) {
+        //         newOrder.push({
+        //             ...found,
+        //             position: index
+        //         });
+        //     }
+
+        // });
+
+
+        //names = newOrder;
+
+        fetch("update_order.php", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                tasks: names.map((t, index) => ({
+                    id: t.id,
+                    position: index
+                }))
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(!data.success){
+                console.error("Order save failed:", data.error);
+            }
+        });
+        //localStorage.setItem("names", JSON.stringify(names));
         updateCounter();
     }
     //let names = JSON.parse(localStorage.getItem("names")) || [];
     let names = [];
-    try{
-        const stored = localStorage.getItem("names");
-        if(stored && stored !== "undefined") {
-            names = JSON.parse(stored);
+    // try{
+    //     const stored = localStorage.getItem("names");
+    //     if(stored && stored !== "undefined") {
+    //         names = JSON.parse(stored);
 
-        }else {
+    //     }else {
 
-            names = [];
-        }
+    //         names = [];
+    //     }
 
-        //names = stored ? JSON.parse(stored) : [];
+    //     //names = stored ? JSON.parse(stored) : [];
 
-    } catch (e){
-        console.warn("Resetting broken storage");
+    // } catch (e){
+    //     console.warn("Resetting broken storage");
         
-        localStorage.removeItem("names");
-        names = [];
-    }
+    //     localStorage.removeItem("names");
+    //     names = [];
+    // }
 
     let currentFilter = "all";
+    let searchQuery ="";
     let draggedItem = null;
 
     function setFilter(filter){
@@ -1309,9 +1601,12 @@
         return 3;
     }
     function isOverdue(date){
-        if(!date) return false;
+        if(!date || date === "null") return false;
         const today = new Date();
         const due = new Date(date);
+
+        if(isNaN(due)) return false;
+
 
         today.setHours(0,0,0,0);
         due.setHours(0,0,0,0);
@@ -1331,11 +1626,33 @@
             emptyMsg.style.display = "none";
             
             let filtered = names.filter(item => {
-                if (currentFilter === "active") return !item.completed;
-                if (currentFilter === "completed") return item.completed;
+                if (currentFilter === "active" && item.completed) return false;
+                if (currentFilter === "completed" && !item.completed) return false;
+                if (searchQuery) {
+                    const q = searchQuery.toLocaleLowerCase();
+
+                    const textMatch = item.text.toLowerCase().includes(q);
+                    const priorityMatch = item.priority.toLowerCase().includes(q);
+                    const dateMatch = item.dueDate && item.dueDate.includes(q);
+
+                    return textMatch || priorityMatch || dateMatch;
+
+                    // if(!textMatch && !priorityMatch && !dateMatch) {
+                    //     return false;
+
+                    // }
+                }
                 return true;
 
             });
+
+            if(filtered.length === 0){
+                emptyMsg.style.display = "block";
+                emptyMsg.innerText = "No matching tasks 🔍";
+
+            }else {
+                emptyMsg.style.display = "none";
+            }
 
             if(!draggedItem){
                 filtered.sort((a,b) => {
@@ -1369,6 +1686,77 @@
         }
 
         
+    }
+
+    function animateSearchFilter() {
+        const items = document.querySelectorAll("#output li");
+
+        items.forEach((li, index) => {
+            const id = Number(li.dataset.id);
+            const item = names.find(t => t.id === id);
+
+            if(!item) return;
+
+            const q = searchQuery.toLowerCase();
+
+            const match = 
+                item.text.toLowerCase().includes(q) ||
+                item.priority.toLowerCase().includes(q) ||
+                (item.dueDate && item.dueDate.toLowerCase().includes(q));
+
+            if(!searchQuery.trim()) {
+                li.classList.remove("hidden");
+
+                gsap.to(li, {
+                    opacity: 1,
+                    y: 0,
+                    scale: 1,
+                    duration: 0.3
+
+                });
+
+            }else if (match){
+                li.classList.remove("hidden");
+
+                gsap.fromTo(li,
+                    {opacity: 0, y: 10, scale:0.95},
+                    {opacity: 1, y: 0, scale: 1, duration: 0.3, delay: index * 0.03}
+                );
+
+
+            }else {
+                gsap.to(li, {
+                    opacity: 0,
+                    y: 10,
+                    scale: 0.9,
+                    duration: 0.2,
+                    onComplete: () => {
+                        li.classList.add("hidden");
+                    }
+                });
+            }
+        });
+    }
+
+    function updateHighlights() {
+        const items = document.querySelectorAll("#output li");
+
+        items.forEach(li => {
+            const id = Number(li.dataset.id);
+            const item = names.find(t => t.id === id);
+            if(!item) return;
+
+            const textEl = li.querySelector(".task-text");
+
+            if(!searchQuery){
+                textEl.innerText = item.text;
+                return;
+
+            }
+            const regex = new RegExp(`(${searchQuery})`, "gi");
+            textEl.innerHTML = item.text.replace(regex,`<mark>$1</mark>`);
+
+        });
     }
 
     names = names.map(item => {
@@ -1441,7 +1829,7 @@
 
     });
 
-    localStorage.setItem("names", JSON.stringify(names));
+    //localStorage.setItem("names", JSON.stringify(names));
     renderList(true);
     updateCounter();
     //addNameToList(names[names.length - 1], true);
@@ -1476,8 +1864,9 @@
     function clearAll(){
         if(!confirm("Are you sure you want to delete all tasks ?"))return;
         names = [];
-        localStorage.removeItem("names");
+        //localStorage.removeItem("names");
         renderList();
+        updateCounter();
     }
 
 
@@ -1566,20 +1955,55 @@
         
         if(value === "") return;
 
-        names.push({
-            id: Date.now(),
-            text: value,
-            completed: false,
-            priority: "medium",
-            dueDate: null
+        fetch("add_task.php", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+
+            },
+            body: JSON.stringify({ text: value})
+        })
+        .then(res => res.json())
+        .then(data => {
+            console.log("Response:", data);
+            if(data.success){
+                loadTasks();
+
+            }else {
+                console.error(data.error);
+            }
+            
         });
-
-        localStorage.setItem("names", JSON.stringify(names));
-        renderList(true);
-        updateCounter();
         input.value = "";
-        input.focus();
 
+
+        // names.push({
+        //     id: Date.now(),
+        //     text: value,
+        //     completed: false,
+        //     priority: "medium",
+        //     dueDate: null
+        // });
+
+        // localStorage.setItem("names", JSON.stringify(names));
+        // renderList(true);
+        // updateCounter();
+        // input.value = "";
+        // input.focus();
+
+    }
+    function loadTasks(){
+        fetch("get_tasks.php")
+        .then(res => res.json())
+        .then(data => {
+            names = data.map(t => ({
+                ...t,
+                completed: Number(t.completed),
+            }));
+
+            renderList();
+            updateCounter();
+        });
     }
     
         document.getElementById("floating-Input").addEventListener("keydown", function(e){
@@ -1587,12 +2011,31 @@
                 addFromFloating();
             }
         });
+
+        document.getElementById("searchInput").addEventListener("input", function(e){
+            searchQuery = e.target.value.toLowerCase();
+            gsap.from("#output li", {
+                opacity: 0,
+                y: 10,
+                duration: 0.3,
+                stagger: 0.05
+            });
+            renderList();
+            // setTimeout(() => {
+            //     animateSearchFilter();
+            //     updateHighlights();
+                
+            // }, 50);
+            
+            //renderList();
+        });
+
     
     
         
-
-    renderList();
-    updateCounter();
+    loadTasks();
+    // renderList();
+    // updateCounter();
 
     // names.forEach(function(item){
     //     addNameToList(item, false);
@@ -1643,7 +2086,7 @@
 
     bar.addEventListener("mousemove", (e) => {
         const rect = bar.getBoundingClientRect();
-        const x = e.clientx - rect.left;
+        const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
 
 
